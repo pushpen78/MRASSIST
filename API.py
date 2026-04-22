@@ -4,6 +4,7 @@ import chromadb
 from openai import OpenAI
 from tavily import TavilyClient
 import os
+from typing import Optional
 
 # Initialize FastAPI
 app = FastAPI()
@@ -22,6 +23,7 @@ tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 class QueryRequest(BaseModel):
     question: str
     n_results: int = 2
+    session_id: Optional[str] = None
 
 print("outside the request")
 
