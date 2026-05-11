@@ -5,6 +5,7 @@ from openai import OpenAI
 from tavily import TavilyClient
 import os
 from typing import Optional
+from prompts import AGENDA_PROMPT, PRODUCT_PROMPT
 
 # Initialize FastAPI
 app = FastAPI()
@@ -25,108 +26,45 @@ class QueryRequest(BaseModel):
     n_results: int = 2
     session_id: Optional[str] = None
 
-print("outside the request")
+#print("outside the request")
 
 
-@app.post("/answer")
-def answer_question(request: QueryRequest):
-    print("Inside the request function")
-    # Step 1 — Embed the question using OpenAI (lightweight)
-    embedding_response = llm.embeddings.create(
-        model="text-embedding-3-small",
-        input=request.question
-    )
-    query_embedding = embedding_response.data[0].embedding
-
-    print(f"DEBUG: request.n_results is {request.n_results}")
-    print(f"DEBUG: session_id is {request.session_id}")
-    # Step 2 — Retrieve relevant chunks from ChromaDB
+@app.post("/agenda/generate")
+def generate_agenda(request: QueryRequest):
+    # 1. Search ChromaDB for relevant past notes
     results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=request.n_results
+        query_texts=[request.question],
+        n_results=3
+    )
+    local_context = "\n".join(results['documents'][0])
+
+    # 2. Format and Send to LLM
+    formatted_prompt = AGENDA_PROMPT.format(
+        full_context=f"PAST NOTES: {local_context}",
+        question=request.question
     )
 
-    pdf_chunks = results["documents"][0]
-    pdf_sources = results["metadatas"][0]
+    # response = llm.invoke(formatted_prompt)
+    return {"agenda": "Your generated result"}
 
-    # Step 3 — Internet search using Tavily
-    web_results = tavily.search(
-        query=request.question,
-        max_results=5
+
+@app.post("/products/suggest")
+async def suggest_products(request: QueryRequest):
+    # 1. Search internal inventory (ChromaDB)
+    db_results = collection.query(query_texts=[request.question], n_results=2)
+    internal_data = "\n".join(db_results['documents'][0])
+
+    # 2. Get real-time data/reviews from Web (Tavily)
+    web_context = tavily.get_search_context(query=request.question)
+
+    # 3. Combine contexts
+    full_context = f"INTERNAL INVENTORY: {internal_data}\n\nWEB RESEARCH: {web_context}"
+
+    # 4. Format Prompt
+    formatted_prompt = PRODUCT_PROMPT.format(
+        full_context=full_context,
+        question=request.question
     )
 
-    # Build web context
-    web_context = ""
-    for i, item in enumerate(web_results["results"]):
-        web_context += (
-            f"WEB RESULT {i+1}\n"
-            f"URL: {item['url']}\n"
-            f"CONTENT: {item['content']}\n\n"
-        )
-
-    # Build PDF context
-    pdf_context = ""
-    for i, chunk in enumerate(pdf_chunks):
-        pdf_context += (
-            f"PDF RESULT {i+1}\n"
-            f"FILE: {pdf_sources[i]['source']}\n"
-            f"CONTENT: {chunk}\n\n"
-        )
-
-
-
-    # Step 4 — Combined context
-    full_context = pdf_context + "\n" + web_context
-
-    # Step 5 — Stronger prompt for synthesis
-    prompt = f"""
-Act as an Elite Medical Sales Representative specializing in Metabolic Health. 
-You are conducting a "Scientific Summary" call with an Endocrinologist regarding Product X.
-
-
-Your job is to get data ONLY from PDF
-
-Knowledge Base & Research:
-Product X Ingested Data: Prioritize the Scientific Summary, Phase III trial results (e.g., glycemic control, weight loss, or renal outcomes), and the Prescribing Information (PI) found in the PDFs.
-External Context: Use the internet to reference current ADA (American Diabetes Association) or AACE (American Association of Clinical Endocrinology) guidelines to show how Product X fits into the latest standards of care.
-
-HCP Persona (The Endocrinologist):
-Priorities: They are data-driven experts who value evidence-based medicine. They care about long-term efficacy, cardiovascular/renal safety profiles, and minimizing patient "therapeutic inertia".
-Pain Points: Patient adherence to complex dosing, managing comorbidities (obesity, CKD), and the administrative burden of prior authorizations.
-
-Operational Guidelines:
-The "Call Steps" Format:
-Opening: A high-impact, clinical hook—not a greeting. (e.g., "Doctor, given the recent focus on cardio-renal protection in Type 2 Diabetes...").
-The Scientific "Deep Dive": Present specific data points from the PDFs. Focus on 
--values, 
- sizes, and hazard ratios.
-HCP Perspective Integration: Acknowledge their specific challenges, such as "sick day guidance" or hypoglycemia risks.
-Closing: A specific "Call to Action"—requesting a follow-up to discuss a specific patient type or providing a sample kit.
-
-Compliance Check:
-Include a mandatory "Important Safety Information (ISI)" section highlighting the most common adverse events and contraindications from the PI.
-
-Then produce a clear, natural-language answer.
-
-### CONTEXT START ###
-{full_context}
-### CONTEXT END ###
-
-### USER QUESTION ###
-{request.question}
-"""
-
-    response = llm.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    print("Answer is ready")
-    answer = response.choices[0].message.content
-
-    return {
-        "question": request.question,
-        "answer": answer,
-        "pdf_sources": pdf_sources,
-        "web_sources": web_results["results"]
-    }
+    # response = llm.invoke(formatted_prompt)
+    return {"suggestions": "Your 3 healthcare products"}
