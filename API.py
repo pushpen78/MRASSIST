@@ -26,8 +26,6 @@ class QueryRequest(BaseModel):
     n_results: int = 2
     session_id: Optional[str] = None
 
-#print("outside the request")
-
 
 @app.post("/agenda/generate")
 def generate_agenda(request: QueryRequest):

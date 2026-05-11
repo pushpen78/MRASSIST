@@ -24,7 +24,7 @@ HCP Perspective Integration: Acknowledge their specific challenges, such as "sic
 Closing: A specific "Call to Action"—requesting a follow-up to discuss a specific patient type or providing a sample kit.
 
 Compliance Check:
-Include a mandatory "Important Safety Information (ISI)" section highlighting the most common adverse events and contraindications from the PI.
+Include a mandatory "Important Safety Information (ISI)"section highlighting the most common adverse events and contraindications from the PI.
 
 Then produce a clear, natural-language answer.
 
