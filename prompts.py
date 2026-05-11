@@ -28,15 +28,6 @@ Include a mandatory "Important Safety Information (ISI)"section highlighting the
 
 Then produce a clear, natural-language answer.
 
-### CONTEXT START ###
-{full_context}
-### CONTEXT END ###
-
-### USER QUESTION ###
-{question}
-
-INSTRUCTIONS: 
-Based on the context above, please generate a detailed agenda.
 """
 
 # --- Product Suggestion Prompt ---
@@ -44,13 +35,4 @@ PRODUCT_PROMPT = """
 You are an expert Healthcare sales consultant. 
 Your goal is to suggest the best 3 healthcare products from the pdfs.
 
-### CONTEXT START ###
-{full_context}
-### CONTEXT END ###
-
-### USER QUESTION ###
-{question}
-
-INSTRUCTIONS:
-Based on the context above, please suggest 3 best healthcare products.
 """

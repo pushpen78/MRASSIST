@@ -27,6 +27,12 @@ class QueryRequest(BaseModel):
     session_id: Optional[str] = None
 
 
+
+
+# 1. Connect to your existing database
+client = chromadb.PersistentClient(path="chroma_db")
+
+
 @app.post("/agenda/generate")
 def generate_agenda(request: QueryRequest):
     # 1. Search ChromaDB for relevant past notes
@@ -34,35 +40,119 @@ def generate_agenda(request: QueryRequest):
         query_texts=[request.question],
         n_results=3
     )
-    local_context = "\n".join(results['documents'][0])
 
-    # 2. Format and Send to LLM
-    formatted_prompt = AGENDA_PROMPT.format(
-        full_context=f"PAST NOTES: {local_context}",
-        question=request.question
+
+    pdf_chunks = results["documents"][0]
+
+    print(f"===================== {pdf_chunks}")
+    pdf_sources = results["metadatas"][0]
+
+    # Step 3 — Internet search using Tavily
+    web_results = tavily.search(
+        query=request.question,
+        max_results=5
     )
 
-    # response = llm.invoke(formatted_prompt)
-    return {"agenda": "Your generated result"}
+    # Build web context
+    web_context = ""
+    for i, item in enumerate(web_results["results"]):
+        web_context += (
+            f"WEB RESULT {i+1}\n"
+            f"URL: {item['url']}\n"
+            f"CONTENT: {item['content']}\n\n"
+        )
+
+    # Build PDF context
+    pdf_context = ""
+    for i, chunk in enumerate(pdf_chunks):
+        pdf_context += (
+            f"PDF RESULT {i+1}\n"
+            f"FILE: {pdf_sources[i]['source']}\n"
+            f"CONTENT: {chunk}\n\n"
+        )
+
+    print(pdf_context)
+
+    # Step 4 — Combined context
+    full_context = pdf_context + "\n" + web_context
+
+
+    # Step 5 — Stronger prompt for synthesis
+    prompt = AGENDA_PROMPT.format() + "\n" + full_context
+
+    response = llm.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    print("Answer is ready")
+    answer = response.choices[0].message.content
+
+    return {
+        "question": request.question,
+        "answer": answer,
+        "pdf_sources": pdf_sources,
+        "web_sources": web_results["results"]
+    }
+
 
 
 @app.post("/products/suggest")
 async def suggest_products(request: QueryRequest):
-    # 1. Search internal inventory (ChromaDB)
-    db_results = collection.query(query_texts=[request.question], n_results=2)
-    internal_data = "\n".join(db_results['documents'][0])
-
-    # 2. Get real-time data/reviews from Web (Tavily)
-    web_context = tavily.get_search_context(query=request.question)
-
-    # 3. Combine contexts
-    full_context = f"INTERNAL INVENTORY: {internal_data}\n\nWEB RESEARCH: {web_context}"
-
-    # 4. Format Prompt
-    formatted_prompt = PRODUCT_PROMPT.format(
-        full_context=full_context,
-        question=request.question
+    # 1. Search ChromaDB for relevant past notes
+    results = collection.query(
+        query_texts=[request.question],
+        n_results=3
     )
 
-    # response = llm.invoke(formatted_prompt)
-    return {"suggestions": "Your 3 healthcare products"}
+    pdf_chunks = results["documents"][0]
+
+    print(f"===================== {pdf_chunks}")
+    pdf_sources = results["metadatas"][0]
+
+    # Step 3 — Internet search using Tavily
+    web_results = tavily.search(
+        query=request.question,
+        max_results=5
+    )
+
+    # Build web context
+    web_context = ""
+    for i, item in enumerate(web_results["results"]):
+        web_context += (
+            f"WEB RESULT {i + 1}\n"
+            f"URL: {item['url']}\n"
+            f"CONTENT: {item['content']}\n\n"
+        )
+
+    # Build PDF context
+    pdf_context = ""
+    for i, chunk in enumerate(pdf_chunks):
+        pdf_context += (
+            f"PDF RESULT {i + 1}\n"
+            f"FILE: {pdf_sources[i]['source']}\n"
+            f"CONTENT: {chunk}\n\n"
+        )
+
+    print(pdf_context)
+
+    # Step 4 — Combined context
+    full_context = pdf_context + "\n" + web_context
+
+    # Step 5 — Stronger prompt for synthesis
+    prompt = PRODUCT_PROMPT.format() + "\n" + full_context
+
+    response = llm.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    print("Answer is ready")
+    answer = response.choices[0].message.content
+
+    return {
+        "question": request.question,
+        "answer": answer,
+        "pdf_sources": pdf_sources,
+        "web_sources": web_results["results"]
+    }

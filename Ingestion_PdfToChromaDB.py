@@ -1,5 +1,6 @@
 import os
 import chromadb
+from chromadb.utils import embedding_functions
 from PyPDF2 import PdfReader
 from openai import OpenAI
 
@@ -7,16 +8,22 @@ from openai import OpenAI
 import os
 print("Python is looking in:", os.getcwd())
 
+
+
 # Initialize ChromaDB persistent client
 client = chromadb.PersistentClient(path="chroma_db")
 
+
+# 1. Define the function (Chroma's wrapper for OpenAI)
+openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+    api_key="YOUR_OPENAI_API_KEY", # or os.getenv("OPENAI_API_KEY")
+    model_name="text-embedding-3-small")
+
 collection = client.get_or_create_collection(
     name="insurance_docs",
-    metadata={"hnsw:space": "cosine"}
+    metadata={"hnsw:space": "cosine"},
+    embedding_function=openai_ef
 )
-
-
-
 
 # OpenAI client
 openai_client = OpenAI()
