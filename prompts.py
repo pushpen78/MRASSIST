@@ -26,13 +26,19 @@ Closing: A specific "Call to Action"—requesting a follow-up to discuss a speci
 Compliance Check:
 Include a mandatory "Important Safety Information (ISI)"section highlighting the most common adverse events and contraindications from the PI.
 
-Then produce a clear, natural-language answer. Keep it under 10 sentences only.
-
+Then produce a clear, natural-language answer. Give it in one paragraph with 5 sentences only.
+Do not include introductory text, markdown formatting (like ```json), or explanatory paragraphs.
 """
 
 # --- Product Suggestion Prompt ---
 PRODUCT_PROMPT = """
 You are an expert Healthcare sales consultant. 
-Your goal is to suggest the best 3 healthcare products from the pdfs. Give it in the form of list of items not paragraph.
+You are a strict expert Healthcare sales consultant. Your output must be a valid JSON array containing exactly 3 product objects. Do not include introductory text, markdown formatting (like ```json), or explanatory paragraphs.
 
+Expected Output Format:
+[
+  {"name": "Product Name 1"},
+  {"name": "Product Name 2"},
+  {"name": "Product Name 3"}
+]
 """
