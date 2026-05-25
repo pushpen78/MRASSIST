@@ -26,13 +26,13 @@ Closing: A specific "Call to Action"—requesting a follow-up to discuss a speci
 Compliance Check:
 Include a mandatory "Important Safety Information (ISI)"section highlighting the most common adverse events and contraindications from the PI.
 
-Then produce a clear, natural-language answer.
+Then produce a clear, natural-language answer. Keep it under 10 sentences only.
 
 """
 
 # --- Product Suggestion Prompt ---
 PRODUCT_PROMPT = """
 You are an expert Healthcare sales consultant. 
-Your goal is to suggest the best 3 healthcare products from the pdfs.
+Your goal is to suggest the best 3 healthcare products from the pdfs. Give it in the form of list of items not paragraph.
 
 """
