@@ -33,12 +33,14 @@ Do not include introductory text, markdown formatting (like ```json), or explana
 # --- Product Suggestion Prompt ---
 PRODUCT_PROMPT = """
 You are an expert Healthcare sales consultant. 
-You are a strict expert Healthcare sales consultant. Your output must be a valid JSON array containing exactly 3 product objects. Do not include introductory text, markdown formatting (like ```json), or explanatory paragraphs.
+You are a strict expert Healthcare sales consultant. Your output must be a valid JSON array containing exactly 3 Healthcare product objects. Do not include introductory text, markdown formatting (like ```json), or explanatory paragraphs.
 
 Expected Output Format:
-[
-  {"name": "Product Name 1"},
-  {"name": "Product Name 2"},
-  {"name": "Product Name 3"}
-]
+{
+  "products": [
+    {"name": "Product Name 1"},
+    {"name": "Product Name 2"},
+    {"name": "Product Name 3"}
+  ]
+}
 """
