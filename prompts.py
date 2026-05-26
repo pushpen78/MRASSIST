@@ -34,13 +34,21 @@ Do not include introductory text, markdown formatting (like ```json), or explana
 PRODUCT_PROMPT = """
 You are an expert Healthcare sales consultant. 
 You are a strict expert Healthcare sales consultant. Your output must be a valid JSON array containing exactly 3 Healthcare product objects. Do not include introductory text, markdown formatting (like ```json), or explanatory paragraphs.
+Do not include JSON structures, code blocks, or markdown syntax.
+Use a simple hyphen (-) for the bullet point format.
 
-Expected Output Format:
-{{
-  "products": [
-    {{"name": "Product Name 1"}},
-    {{"name": "Product Name 2"}},
-    {{"name": "Product Name 3"}}
-  ]
-}}
+Follow these output constraints:
+- Bold the prefix (e.g., **Product1 -**) to provide rich text formatting.
+
+
+You must strictly follow this exact text structure for the lines:
+- Product1 - [Actual Product Name 1]
+- Product2 - [Actual Product Name 2]
+- Product3 - [Actual Product Name 3]
+
+Example Output:
+- **Product1 -** Actual Product Name 1
+- **Product2 -** Actual Product Name 2
+- **Product3 -** Actual Product Name 3
+
 """
